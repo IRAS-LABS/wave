@@ -5,8 +5,11 @@ import android.app.NotificationChannel
 import android.app.NotificationManager
 import android.app.PendingIntent
 import android.app.Service
+import android.bluetooth.BluetoothAdapter
+import android.content.BroadcastReceiver
 import android.content.Context
 import android.content.Intent
+import android.content.IntentFilter
 import android.os.Build
 import android.os.IBinder
 import androidx.core.app.NotificationCompat
@@ -72,6 +75,9 @@ class ScanService : Service() {
     private lateinit var btClassic: BtClassicScanner
     private lateinit var cell: CellScanner
     private lateinit var scanners: List<Scanner>
+
+    /** Live while a scan is running. See [watchBluetoothState]. */
+    private var btStateReceiver: BroadcastReceiver? = null
 
     /**
      * State lives on the companion rather than the instance so the UI can observe it
@@ -157,11 +163,8 @@ class ScanService : Service() {
         // A lane that never starts also never reaches bump(), so its reason for being
         // silent would never be shown. Capture it here instead, at the one moment it is
         // known: an unexplained empty band is exactly the failure this app must not have.
-        _state.value = _state.value.copy(
-            bleError = ble.lastError,
-            btClassicError = btClassic.lastError,
-            btClassicCycles = btClassic.cycles
-        )
+        refreshBluetoothStatus()
+        watchBluetoothState()
 
         // Probed on the IO dispatcher, never here. isAvailable() opens a TCP socket to
         // rtl_tcp on 127.0.0.1:1234, and onStartCommand runs on the main thread, so doing
@@ -200,11 +203,75 @@ class ScanService : Service() {
     }
 
     private fun stopScanning() {
+        btStateReceiver?.let { runCatching { unregisterReceiver(it) } }
+        btStateReceiver = null
         scanners.forEach { runCatching { it.stop() } }
         sdr?.let { runCatching { it.stop() } }
         gnss.stop()
         scope.launch { runCatching { repo.endSession() } }
         _state.value = _state.value.copy(running = false)
+    }
+
+    /**
+     * Brings the two Bluetooth lanes back when the adapter is switched on mid-session.
+     *
+     * Scanners are probed once, at the top of [startScanning]. That is fine for Wi-Fi and
+     * cell, whose radios are either on or the phone is a brick, but Bluetooth is routinely
+     * off when a scan is started and turned on a minute later. Without this both LE and
+     * classic stayed dead for the rest of the session, and the diagnostics kept reporting
+     * "Bluetooth is off" long after it was on - a stale explanation is worse than none,
+     * because it is believed.
+     *
+     * ACTION_STATE_CHANGED is a protected system broadcast, so nothing but the platform can
+     * deliver it and the receiver is registered not-exported.
+     */
+    private fun watchBluetoothState() {
+        if (btStateReceiver != null) return
+        val r = object : BroadcastReceiver() {
+            override fun onReceive(c: Context?, i: Intent?) {
+                if (i?.action != BluetoothAdapter.ACTION_STATE_CHANGED) return
+                when (i.getIntExtra(BluetoothAdapter.EXTRA_STATE, BluetoothAdapter.ERROR)) {
+                    BluetoothAdapter.STATE_ON -> {
+                        if (!_state.value.running) return
+                        // start() on both of these is a no-op when already running, so a
+                        // duplicate STATE_ON cannot double-register anything.
+                        listOf(ble, btClassic).forEach { s ->
+                            if (s.isAvailable()) {
+                                s.start { obs ->
+                                    inbox.trySend(obs to System.currentTimeMillis())
+                                }
+                            }
+                        }
+                    }
+                    BluetoothAdapter.STATE_TURNING_OFF, BluetoothAdapter.STATE_OFF -> {
+                        runCatching { ble.stop() }
+                        runCatching { btClassic.stop() }
+                        // Re-probe purely for the side effect: it is what rewrites
+                        // lastError back to "Bluetooth is off".
+                        ble.isAvailable()
+                        btClassic.isAvailable()
+                    }
+                }
+                refreshBluetoothStatus()
+            }
+        }
+        val filter = IntentFilter(BluetoothAdapter.ACTION_STATE_CHANGED)
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+            registerReceiver(r, filter, Context.RECEIVER_NOT_EXPORTED)
+        } else {
+            @Suppress("UnspecifiedRegisterReceiverFlag")
+            registerReceiver(r, filter)
+        }
+        btStateReceiver = r
+    }
+
+    /** Copies whatever the two Bluetooth lanes currently think of themselves into the UI. */
+    private fun refreshBluetoothStatus() {
+        _state.value = _state.value.copy(
+            bleError = ble.lastError,
+            btClassicError = btClassic.lastError,
+            btClassicCycles = btClassic.cycles
+        )
     }
 
     /**

@@ -18,8 +18,8 @@ android {
         // Everything 31-only is already behind a Build.VERSION guard.
         minSdk = 29
         targetSdk = 34
-        versionCode = 5
-        versionName = "1.0.0"
+        versionCode = 6
+        versionName = "1.0.1"
     }
 
     // Signing material is never in this file and never in the repository. Put a

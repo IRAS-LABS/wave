@@ -12,6 +12,8 @@ import android.content.Intent
 import android.content.IntentFilter
 import android.content.pm.PackageManager
 import android.os.Build
+import android.os.Handler
+import android.os.Looper
 import android.util.Log
 import com.wave.scanner.data.db.Band
 
@@ -41,6 +43,8 @@ class BtClassicScanner(private val context: Context) : Scanner {
             as? BluetoothManager)?.adapter
 
     private var receiver: BroadcastReceiver? = null
+
+    private val handler = Handler(Looper.getMainLooper())
 
     /** Surfaced on the Radio screen so a silent classic lane is visible rather than assumed. */
     var lastError: String? = null
@@ -85,9 +89,7 @@ class BtClassicScanner(private val context: Context) : Scanner {
                     }
                     BluetoothAdapter.ACTION_DISCOVERY_FINISHED -> {
                         cycles++
-                        // Restart at once: a gap here is a gap in the capture, and the
-                        // adapter is idle the moment the cycle ends.
-                        restart()
+                        scheduleRestart()
                     }
                 }
             }
@@ -107,6 +109,29 @@ class BtClassicScanner(private val context: Context) : Scanner {
             context.registerReceiver(r, filter)
         }
         restart()
+    }
+
+    /**
+     * Queues the next inquiry cycle instead of starting it inline.
+     *
+     * Calling startDiscovery() from inside the ACTION_DISCOVERY_FINISHED callback did not
+     * work: on hardware the classic lane ran exactly one twelve-second cycle per scan and
+     * then went silent for the rest of the session, with no exception raised and no error
+     * surfaced - the adapter is still tearing the previous cycle down and drops the
+     * request. That is the worst failure this app can have: a band reporting zero while
+     * looking healthy.
+     *
+     * A short hop back to the main looper is enough to let the stack settle. It is kept
+     * well under the inquiry length so the duty cycle stays close to continuous.
+     */
+    private fun scheduleRestart() {
+        handler.removeCallbacks(restartRunnable)
+        handler.postDelayed(restartRunnable, RESTART_DELAY_MS)
+    }
+
+    private val restartRunnable = Runnable {
+        // stop() may have landed while this was queued.
+        if (receiver != null) restart()
     }
 
     @SuppressLint("MissingPermission")
@@ -171,7 +196,9 @@ class BtClassicScanner(private val context: Context) : Scanner {
             .ifBlank { "class 0x" + c.deviceClass.toString(16) }
     }
 
+    @SuppressLint("MissingPermission")
     override fun stop() {
+        handler.removeCallbacks(restartRunnable)
         receiver?.let { runCatching { context.unregisterReceiver(it) } }
         receiver = null
         runCatching { if (hasPermission()) adapter?.cancelDiscovery() }
@@ -179,6 +206,10 @@ class BtClassicScanner(private val context: Context) : Scanner {
 
     companion object {
         private const val TAG = "Wave/BtClassic"
+
+        /** Long enough for the adapter to finish tearing a cycle down, short enough to
+         *  keep classic coverage effectively continuous. */
+        private const val RESTART_DELAY_MS = 1_200L
 
         private val SERVICES = listOf(
             BluetoothClass.Service.AUDIO to "audio",

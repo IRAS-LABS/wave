@@ -110,6 +110,11 @@ fun ScanScreen(
             Row(horizontalArrangement = Arrangement.spacedBy(8.dp), modifier = Modifier.fillMaxWidth()) {
                 RadioTile("Wi-Fi", scan.wifiSeen, BandWifi, Modifier.weight(1f))
                 RadioTile("BLE", scan.bleSeen, BandBle, Modifier.weight(1f))
+                // Classic is its own radio with its own duty cycle and its own way of
+                // failing, so it gets its own count. Folding it into the BLE tile would
+                // let a dead classic lane hide behind a healthy LE one. Same colour
+                // because it is still Bluetooth.
+                RadioTile("BT", scan.btClassicSeen, BandBle, Modifier.weight(1f))
                 RadioTile("Cell", scan.cellSeen, BandCell, Modifier.weight(1f))
                 RadioTile("Sub-GHz", scan.subGhzSeen, BandSubGhz, Modifier.weight(1f))
             }

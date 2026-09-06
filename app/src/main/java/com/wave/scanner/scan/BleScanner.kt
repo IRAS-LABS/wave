@@ -1,6 +1,7 @@
 package com.wave.scanner.scan
 
 import android.Manifest
+import android.annotation.SuppressLint
 import android.bluetooth.BluetoothManager
 import android.bluetooth.le.BluetoothLeScanner
 import android.bluetooth.le.ScanCallback
@@ -53,6 +54,8 @@ class BleScanner(private val context: Context) : Scanner {
                 PackageManager.PERMISSION_GRANTED
         }
 
+    // Guarded by hasPermission() three lines down; lint cannot see through the helper.
+    @SuppressLint("MissingPermission")
     override fun start(onObservation: (RadioObservation) -> Unit) {
         if (callback != null) return
         val adapter = manager.adapter ?: return
@@ -97,6 +100,8 @@ class BleScanner(private val context: Context) : Scanner {
             .onFailure { lastError = it.message }
     }
 
+    // A callback only exists if start() got past its permission check.
+    @SuppressLint("MissingPermission")
     override fun stop() {
         val cb = callback ?: return
         runCatching { scanner?.stopScan(cb) }

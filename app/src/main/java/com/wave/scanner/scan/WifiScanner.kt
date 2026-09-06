@@ -1,6 +1,7 @@
 package com.wave.scanner.scan
 
 import android.Manifest
+import android.annotation.SuppressLint
 import android.content.BroadcastReceiver
 import android.content.Context
 import android.content.Intent
@@ -175,6 +176,8 @@ class WifiScanner(private val context: Context) : Scanner {
             .onFailure { Log.w(TAG, "startScan refused: ${it.message}") }
     }
 
+    // hasPermission() is the check; lint does not follow it.
+    @SuppressLint("MissingPermission")
     private fun harvest() {
         val cb = callback ?: return
         if (!hasPermission()) return

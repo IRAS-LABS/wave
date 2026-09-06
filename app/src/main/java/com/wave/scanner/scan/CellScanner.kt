@@ -1,6 +1,7 @@
 package com.wave.scanner.scan
 
 import android.Manifest
+import android.annotation.SuppressLint
 import android.content.Context
 import android.content.pm.PackageManager
 import android.os.Build
@@ -69,6 +70,8 @@ class CellScanner(private val context: Context) : Scanner {
         callback = null
     }
 
+    // isAvailable() is the permission check; lint does not follow it.
+    @SuppressLint("MissingPermission")
     private fun harvest() {
         val cb = callback ?: return
         if (!isAvailable()) return
