@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- Realtek RTL2832U — the chip behind every RTL-SDR dongle -->
+    <usb-device vendor-id="3034" product-id="10290" />  <!-- 0x0BDA:0x2832 -->
+    <usb-device vendor-id="3034" product-id="10296" />  <!-- 0x0BDA:0x2838 RTL-SDR Blog / generic -->
+    <usb-device vendor-id="3034" product-id="10298" />  <!-- 0x0BDA:0x283A -->
+    <!-- Common rebadged vendor IDs -->
+    <usb-device vendor-id="1240" product-id="4113" />   <!-- 0x04D8:0x1011 -->
+    <usb-device vendor-id="7504" product-id="24737" />  <!-- 0x1D50:0x60A1 Airspy/HackRF-class -->
+    <usb-device vendor-id="7504" product-id="24651" />  <!-- 0x1D50:0x604B HackRF One -->
+</resources>

@@ -1,0 +1,25 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  Nothing leaves this device through backup or device-to-device transfer.
+
+  allowBackup="false" already blocks cloud backup, but on Android 12+ it does not by
+  itself block the device-transfer path. The database holds MAC addresses and the
+  coordinates at which they were heard - which is a log of the owner's own movements -
+  so both paths are excluded explicitly.
+-->
+<data-extraction-rules>
+    <cloud-backup>
+        <exclude domain="root" />
+        <exclude domain="file" />
+        <exclude domain="database" />
+        <exclude domain="sharedpref" />
+        <exclude domain="external" />
+    </cloud-backup>
+    <device-transfer>
+        <exclude domain="root" />
+        <exclude domain="file" />
+        <exclude domain="database" />
+        <exclude domain="sharedpref" />
+        <exclude domain="external" />
+    </device-transfer>
+</data-extraction-rules>

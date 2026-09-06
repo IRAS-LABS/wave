@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- Pure black rather than the app's near-black Void: the launcher sets this against
+         arbitrary wallpaper, where true black gives the cleaner edge. -->
+    <color name="ic_launcher_background">#000000</color>
+</resources>

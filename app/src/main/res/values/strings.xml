@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">Wave</string>
+    <string name="scan_channel_name">Scanning</string>
+    <string name="alert_channel_name">Threat alerts</string>
+</resources>

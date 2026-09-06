@@ -1,0 +1,30 @@
+*.iml
+.gradle/
+.kotlin/
+local.properties
+.idea/
+build/
+captures/
+.externalNativeBuild
+.cxx/
+
+# Signing material. Never commit a keystore or its passwords.
+*.jks
+*.keystore
+keystore.properties
+
+# Build outputs and anything staged for sideloading.
+*.apk
+*.aab
+.serve/
+
+# Local sideload helper. Machine-specific; not part of the published project.
+serve-capped.py
+
+# Agent/session scratch. These reference local paths and machine setup.
+.claude/
+.memory/
+AGENTS.md
+GEMINI.md
+CLAUDE.md
+notes/

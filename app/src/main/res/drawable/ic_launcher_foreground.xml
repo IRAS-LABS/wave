@@ -1,0 +1,23 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+    Adaptive-icon foreground: one continuous wave, nothing else.
+
+    The 108dp viewport is masked to a 72dp circle on most launchers, with only the centre
+    66dp guaranteed visible, so the path stays inside x25..83 / y42..66 and no launcher
+    shape can clip a crest. Stroked rather than filled: a filled wave collapses into a blob
+    at 48px, while a 7dp stroke still reads as a wave. Amplitude is deliberately shallow -
+    a taller curve stops looking like a wave and starts looking like loops.
+-->
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="108dp"
+    android:height="108dp"
+    android:viewportWidth="108"
+    android:viewportHeight="108">
+    <path
+        android:pathData="M25,54 C30,42 39.3,42 44.3,54 C49.3,66 58.7,66 63.7,54 C68.7,42 78,42 83,54"
+        android:strokeColor="#FFFFFF"
+        android:strokeWidth="7"
+        android:strokeLineCap="round"
+        android:strokeLineJoin="round"
+        android:fillColor="@android:color/transparent" />
+</vector>

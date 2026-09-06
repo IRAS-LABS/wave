@@ -1,0 +1,22 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  Cleartext is off everywhere. The two real network calls Wave makes - OpenStreetMap
+  tiles and the Overpass camera import - are HTTPS, and nothing else in the app speaks
+  HTTP at all.
+
+  The loopback exception is for the rtl_tcp bridge on 127.0.0.1. That is a raw TCP
+  socket rather than an HTTP stack, so this policy does not actually govern it; the
+  entry is here so the intent is explicit and so a future loopback HTTP helper does not
+  quietly reopen cleartext for the whole app.
+-->
+<network-security-config>
+    <base-config cleartextTrafficPermitted="false">
+        <trust-anchors>
+            <certificates src="system" />
+        </trust-anchors>
+    </base-config>
+    <domain-config cleartextTrafficPermitted="true">
+        <domain includeSubdomains="false">127.0.0.1</domain>
+        <domain includeSubdomains="false">localhost</domain>
+    </domain-config>
+</network-security-config>
