@@ -142,7 +142,10 @@ class BtClassicScanner(private val context: Context) : Scanner {
             // cancelDiscovery first: startDiscovery is a no-op while one is already
             // running, so without this a restart can silently do nothing at all.
             if (a.isDiscovering) a.cancelDiscovery()
-            if (!a.startDiscovery()) lastError = "adapter refused startDiscovery"
+            // Clearing on success matters as much as setting on failure: a lane that
+            // recovered would otherwise keep displaying the reason it failed an hour ago.
+            if (a.startDiscovery()) lastError = null
+            else lastError = "adapter refused startDiscovery"
         }.onFailure {
             lastError = it.message ?: it::class.java.simpleName
             Log.w(TAG, "classic discovery restart failed", it)

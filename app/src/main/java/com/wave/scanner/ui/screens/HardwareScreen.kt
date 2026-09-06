@@ -348,9 +348,11 @@ private fun diagnose(scan: ScanService.ScanState): List<Problem> {
     if (scan.running && scan.btClassicError == null && scan.btClassicCycles == 0) {
         out += Problem(
             "Classic Bluetooth has not completed an inquiry",
-            "The scan is running but no inquiry cycle has finished. The adapter is " +
-                "usually wedged by another app holding discovery; toggling Bluetooth off " +
-                "and on clears it.",
+            "The scan is running but no inquiry cycle has finished, so nothing " +
+                "classic-only is being found. On some phones the adapter accepts the " +
+                "request and silently never runs it, which no app can work around from " +
+                "here. If another app is holding discovery, toggling Bluetooth off and " +
+                "on clears that; if it changes nothing, this phone is one of them.",
             "Open Bluetooth settings"
         ) { Intent(Settings.ACTION_BLUETOOTH_SETTINGS) }
     }

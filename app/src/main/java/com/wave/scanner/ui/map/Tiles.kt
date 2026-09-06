@@ -9,6 +9,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.mutableStateMapOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.snapshots.SnapshotStateMap
+import com.wave.scanner.BuildConfig
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
@@ -44,10 +45,17 @@ object TileSource {
     const val TILE_SIZE = 256
 
     /**
-     * OSM's tile policy requires a User-Agent that identifies the application, and blocks
-     * traffic that does not carry one. This is that identifier.
+     * OSM's tile policy requires a User-Agent that identifies the application *and gives a
+     * way to reach whoever runs it*. The second half is not decoration. The earlier string
+     * here offered "contact via app store", which is not a contact, and every tile came
+     * back as the grey "Access blocked" placeholder - served with HTTP 200, so nothing in
+     * this file noticed and the whole map filled with them.
+     *
+     * Reproduced directly against tile.openstreetmap.org: the same tile, same minute, is
+     * the blocked placeholder without a contact URL and real streets with one.
      */
-    private const val USER_AGENT = "Wave/1.0 (offline wardriving map; contact via app store)"
+    private const val USER_AGENT =
+        "Wave/" + BuildConfig.VERSION_NAME + " (+https://github.com/IRAS-LABS/wave)"
 
     fun lonToWorldX(lon: Double, z: Int): Double =
         (lon + 180.0) / 360.0 * n(z) * TILE_SIZE
@@ -105,7 +113,13 @@ object TileSource {
  */
 class TileStore(context: Context) {
 
-    private val dir = File(context.cacheDir, "tiles").apply { mkdirs() }
+    /**
+     * Versioned. Tiles written before the User-Agent was fixed are "Access blocked"
+     * placeholders that this cache would otherwise serve forever, because a tile file that
+     * exists is never revalidated. Bumping the directory abandons them; Android reclaims
+     * the old one as ordinary cache.
+     */
+    private val dir = File(context.cacheDir, "tiles-v2").apply { mkdirs() }
 
     /**
      * Sized in bytes rather than entries. A 256x256 ARGB_8888 tile is 256 KB, so a screen
@@ -161,6 +175,13 @@ class TileStore(context: Context) {
         conn.use { c ->
             if (c.responseCode != 200) {
                 Log.w(TAG, "tile $z/$x/$y -> HTTP ${c.responseCode}")
+                false
+            } else if (c.getHeaderField("Cache-Control")?.contains("no-cache") == true) {
+                // OSM serves its "Access blocked" placeholder with a 200 and marks it
+                // no-cache. Without this check that grey square is written to disk as if
+                // it were map data and served from there for the life of the install -
+                // the map stays broken even after the cause is fixed.
+                Log.w(TAG, "tile $z/$x/$y -> placeholder, refusing to cache")
                 false
             } else {
                 // Write beside the target then rename, so a fetch interrupted halfway

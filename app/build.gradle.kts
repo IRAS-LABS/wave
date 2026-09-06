@@ -18,8 +18,8 @@ android {
         // Everything 31-only is already behind a Build.VERSION guard.
         minSdk = 29
         targetSdk = 34
-        versionCode = 6
-        versionName = "1.0.1"
+        versionCode = 7
+        versionName = "1.0.2"
     }
 
     // Signing material is never in this file and never in the repository. Put a
@@ -73,7 +73,9 @@ android {
     }
     kotlinOptions { jvmTarget = "17" }
 
-    buildFeatures { compose = true }
+    // buildConfig carries the version name into the OSM User-Agent, so it cannot
+    // drift out of date the way a hardcoded string does.
+    buildFeatures { compose = true; buildConfig = true }
 
     // The bundled OUI SQLite database is already compressed content; leaving it
     // uncompressed lets us open it by memory-mapping instead of unpacking 18 MB on boot.

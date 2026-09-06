@@ -15,7 +15,7 @@ document — what this tool is for, and the things it deliberately refuses to do
 ## Install
 
 **[Download the latest APK](https://github.com/IRAS-LABS/wave/releases/latest)** —
-`wave-1.0.1.apk`, 21 MB.
+`wave-1.0.2.apk`, 21 MB.
 
 Requires **Android 10 (API 29) or newer**. There is no Play Store listing; sideload it.
 
@@ -32,7 +32,7 @@ Releases are signed with the project key. Check the certificate rather than trus
 file:
 
 ```
-apksigner verify --print-certs wave-1.0.1.apk
+apksigner verify --print-certs wave-1.0.2.apk
 ```
 
 ```
@@ -41,10 +41,10 @@ Signer #1 certificate SHA-256 digest: 84551b7f73b1bdaf5f32c6e7826e81b7f18722b520
 ```
 
 The certificate digest is the thing that matters and it does not change between
-releases. The file hash does — this one is for `wave-1.0.1.apk`:
+releases. The file hash does — this one is for `wave-1.0.2.apk`:
 
 ```
-SHA-256  1a089708a2b26a05a06adf4398a23437dbed8815224f2619bae1d8b3665f420d
+SHA-256  365c48bdd39fd9555d02aebbd60571e33cab089d2d504d34588f173e671a12cb
 ```
 
 If the certificate digest does not match, do not install it — regardless of where you

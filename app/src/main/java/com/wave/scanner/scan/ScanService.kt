@@ -166,6 +166,20 @@ class ScanService : Service() {
         refreshBluetoothStatus()
         watchBluetoothState()
 
+        // The classic lane's health - cycles completed, why it stopped - lives in fields
+        // that only bump() copies into the UI, and bump() runs only when that lane sees
+        // something. So the one situation where the number matters, a lane seeing nothing,
+        // is the one situation where it was never updated: the Radio screen showed
+        // "0 inquiry cycles" for the whole session no matter what the radio was doing, and
+        // the alert card called it wedged on that basis. Poll it instead, so what is shown
+        // is what the scanner actually holds.
+        scope.launch {
+            while (isActive && _state.value.running) {
+                delay(BT_STATUS_POLL_MS)
+                refreshBluetoothStatus()
+            }
+        }
+
         // Probed on the IO dispatcher, never here. isAvailable() opens a TCP socket to
         // rtl_tcp on 127.0.0.1:1234, and onStartCommand runs on the main thread, so doing
         // this inline threw NetworkOnMainThreadException the instant Scan was pressed --
@@ -468,6 +482,9 @@ class ScanService : Service() {
 
         /** How often the radio status line is refreshed while an SDR is attached. */
         private const val SDR_STATUS_POLL_MS = 1_000L
+
+        /** How often the Bluetooth lanes' self-reported health is copied into the UI. */
+        private const val BT_STATUS_POLL_MS = 2_000L
 
         @Volatile private var INSTANCE: ScanService? = null
 
