@@ -1,11 +1,31 @@
+<div align="center">
+
+<picture>
+  <source media="(prefers-color-scheme: dark)" srcset=".github/assets/wave-mark-dark.svg">
+  <img src=".github/assets/wave-mark-light.svg" alt="Wave" width="220">
+</picture>
+
 # Wave
 
-A passive RF scanner for Android. It listens to what the radios around you are already
-broadcasting into open air, names the hardware behind each signal offline, and tells you
-when something appears to be travelling with you.
+**A passive RF scanner for Android.**<br>
+It listens to what the radios around you are already broadcasting into open air, names the
+hardware behind each signal offline, and tells you when something appears to be travelling
+with you.
 
-It never transmits. It does not connect, pair, associate, probe, deauthenticate, inject,
-jam, or attempt to decrypt anything.
+[![Latest release](https://img.shields.io/github/v/release/IRAS-LABS/wave?label=release&color=00A97F)](https://github.com/IRAS-LABS/wave/releases/latest)
+[![Android 10+](https://img.shields.io/badge/Android-10%2B-00A97F)](#install)
+[![Licence](https://img.shields.io/badge/licence-Apache--2.0-00A97F)](LICENSE)
+[![Build](https://github.com/IRAS-LABS/wave/actions/workflows/build.yml/badge.svg)](https://github.com/IRAS-LABS/wave/actions/workflows/build.yml)
+
+[Install](#install) · [What it hears](#what-it-listens-to) · [What it refuses to do](#what-it-does-not-do) · [Build from source](#build-from-source)
+
+</div>
+
+---
+
+> **It never transmits.** It does not connect, pair, associate, probe, deauthenticate,
+> inject, jam, or attempt to decrypt anything. Everything it knows, it learned by
+> listening.
 
 **Read [AUTHORIZATION.md](AUTHORIZATION.md) before you use it.** It is the scope
 document — what this tool is for, and the things it deliberately refuses to do.
@@ -40,15 +60,15 @@ Signer #1 certificate DN: CN=Wave, OU=IRAS Labs, O=IRAS Labs, C=US
 Signer #1 certificate SHA-256 digest: 84551b7f73b1bdaf5f32c6e7826e81b7f18722b5205be1ac91123790a1dc603e
 ```
 
-The certificate digest is the thing that matters and it does not change between
+The certificate digest is the thing that matters, and it does not change between
 releases. The file hash does — this one is for `wave-1.0.2.apk`:
 
 ```
 SHA-256  365c48bdd39fd9555d02aebbd60571e33cab089d2d504d34588f173e671a12cb
 ```
 
-If the certificate digest does not match, do not install it — regardless of where you
-got the file.
+If the certificate digest does not match, do not install it — regardless of where you got
+the file.
 
 ### Upgrading
 
@@ -63,15 +83,14 @@ keep from the Data tab beforehand.
 
 | Band | Source | Needs |
 |---|---|---|
-| BLE | advertisements, manufacturer data, service UUIDs | phone |
-| Wi-Fi | APs, beacons, vendor information elements | phone |
-| Classic Bluetooth | inquiry responses, class-of-device, SDP | phone |
-| Cellular | GSM / WCDMA / LTE / NR serving and neighbour cells | phone |
-| Sub-GHz | TPMS at 315 / 433.92 MHz and other bursts | RTL-SDR or HackRF |
+| **BLE** | advertisements, manufacturer data, service UUIDs | phone |
+| **Wi-Fi** | APs, beacons, vendor information elements | phone |
+| **Classic Bluetooth** | inquiry responses, class-of-device, SDP | phone |
+| **Cellular** | GSM / WCDMA / LTE / NR serving and neighbour cells | phone |
+| **Sub-GHz** | TPMS at 315 / 433.92 MHz and other bursts | RTL-SDR or HackRF |
 
 The SDR lane speaks `rtl_tcp` over loopback, so a driver app owns the USB device and Wave
-needs no root and no per-dongle quirk handling. See
-[RADIO-SETUP.md](RADIO-SETUP.md).
+needs no root and no per-dongle quirk handling. See [RADIO-SETUP.md](RADIO-SETUP.md).
 
 ## What it does with them
 
@@ -94,6 +113,10 @@ These are scope decisions, not gaps. The full reasoning is in
 - No routing around detected law enforcement
 - No cross-session profiling of strangers
 
+It is also **not an IMSI-catcher detector**. The signals that would positively identify
+one live in the baseband, and Android's public API exposes none of them. Wave reports
+cell-network anomalies and says exactly that much.
+
 ## Where the data goes
 
 Nowhere. No account, no telemetry, no crash reporting, no analytics. Two network calls
@@ -101,9 +124,36 @@ exist and both are triggered by you: OpenStreetMap tiles, and the Overpass camer
 import. Neither carries anything you have detected. Cleartext traffic is disabled, and
 backup and device-to-device transfer are both excluded.
 
+## Permissions, and why
+
+| Permission | Why |
+|---|---|
+| `ACCESS_FINE_LOCATION` | Android gates all Wi-Fi and Bluetooth scan results behind it, and the trail needs a position |
+| `ACCESS_BACKGROUND_LOCATION` | scanning continues while the screen is off |
+| `BLUETOOTH_SCAN` / `NEARBY_WIFI_DEVICES` | passive discovery |
+| `READ_PHONE_STATE` | cell identity for the anomaly checks |
+| `FOREGROUND_SERVICE_LOCATION` | the scan runs as a visible foreground service |
+| `INTERNET` | the loopback `rtl_tcp` socket, OSM tiles, Overpass import |
+
 ---
 
 ## Build from source
+
+```
+git clone https://github.com/IRAS-LABS/wave.git
+cd wave
+./gradlew assembleDebug
+```
+
+Windows: use `gradlew.bat` in place of `./gradlew`. The APK lands at
+`app/build/outputs/apk/debug/app-debug.apk`; install it with
+`adb install -r app/build/outputs/apk/debug/app-debug.apk`.
+
+The first build downloads Gradle and the dependency graph and takes a few minutes. Later
+builds are fast, apart from release builds, where R8 does real work.
+
+<details>
+<summary><b>Prerequisites, tests, release builds and multi-profile installs</b></summary>
 
 ### Prerequisites
 
@@ -114,7 +164,7 @@ backup and device-to-device transfer are both excluded.
 | Gradle | none needed — the wrapper pins **8.7** and downloads it |
 
 Android Studio (Koala or newer) supplies all three; open the project folder and it will
-prompt for anything missing. Everything below also works from a plain command line with
+prompt for anything missing. Everything here also works from a plain command line with
 only the SDK command-line tools installed.
 
 ### Point the build at your SDK
@@ -127,25 +177,6 @@ sdk.dir=/path/to/Android/Sdk
 
 That file is gitignored — it is a machine-local path and does not belong in the
 repository.
-
-### Debug build
-
-```
-git clone https://github.com/IRAS-LABS/wave.git
-cd wave
-./gradlew assembleDebug
-```
-
-Windows: use `gradlew.bat` in place of `./gradlew`.
-
-The APK lands at `app/build/outputs/apk/debug/app-debug.apk`. Install it over ADB:
-
-```
-adb install -r app/build/outputs/apk/debug/app-debug.apk
-```
-
-The first build downloads Gradle and the dependency graph and takes a few minutes.
-Later builds are fast, apart from release builds, where R8 does real work — see below.
 
 ### Tests
 
@@ -164,7 +195,8 @@ none in this repository and none in its history.
 Generate a key:
 
 ```
-keytool -genkeypair -v -keystore app/my-release.jks -alias wave   -keyalg RSA -keysize 4096 -validity 10950
+keytool -genkeypair -v -keystore app/my-release.jks -alias wave \
+  -keyalg RSA -keysize 4096 -validity 10950
 ```
 
 Create `keystore.properties` in the repository root:
@@ -199,20 +231,13 @@ publishing releases.
 work profiles, vendor app-cloning or secure folders, a bare `adb install` sprays the
 package into all of them and leaves duplicate launcher icons.
 
-## Permissions, and why
+</details>
 
-| Permission | Why |
-|---|---|
-| `ACCESS_FINE_LOCATION` | Android gates all Wi-Fi and Bluetooth scan results behind it, and the trail needs a position |
-| `ACCESS_BACKGROUND_LOCATION` | scanning continues while the screen is off |
-| `BLUETOOTH_SCAN` / `NEARBY_WIFI_DEVICES` | passive discovery |
-| `READ_PHONE_STATE` | cell identity for the anomaly checks |
-| `FOREGROUND_SERVICE_LOCATION` | the scan runs as a visible foreground service |
-| `INTERNET` | the loopback `rtl_tcp` socket, OSM tiles, Overpass import |
+---
 
 ## Licence
 
 Apache-2.0 — see [LICENSE](LICENSE). Bundled reference datasets and their origins are
 listed in [THIRD-PARTY-NOTICES.md](THIRD-PARTY-NOTICES.md).
 
-Security issues: please report privately rather than opening a public issue.
+**Security issues:** please report privately rather than opening a public issue.
