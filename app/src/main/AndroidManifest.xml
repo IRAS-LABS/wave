@@ -30,8 +30,10 @@
     <uses-permission android:name="android.permission.FOREGROUND_SERVICE" />
     <uses-permission android:name="android.permission.FOREGROUND_SERVICE_LOCATION" />
     <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
-    <uses-permission android:name="android.permission.WAKE_LOCK" />
-    <uses-permission android:name="android.permission.RECEIVE_BOOT_COMPLETED" />
+    <!-- WAKE_LOCK and RECEIVE_BOOT_COMPLETED were declared through 1.0.2 and never
+         used: no wake lock is ever acquired, and there is no boot receiver. A
+         permission you do not exercise is one a reader has to take on trust, so
+         they are gone. -->
 
     <!-- ============ SDR lane (rtl_tcp driver bridge is loopback TCP) ============ -->
     <uses-permission android:name="android.permission.INTERNET" />

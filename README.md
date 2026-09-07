@@ -119,21 +119,53 @@ cell-network anomalies and says exactly that much.
 
 ## Where the data goes
 
-Nowhere. No account, no telemetry, no crash reporting, no analytics. Two network calls
-exist and both are triggered by you: OpenStreetMap tiles, and the Overpass camera-map
-import. Neither carries anything you have detected. Cleartext traffic is disabled, and
-backup and device-to-device transfer are both excluded.
+Nowhere. No account, no telemetry, no crash reporting, no analytics. Nothing Wave detects
+is ever sent anywhere — every lookup that names a device runs against databases inside
+the APK.
+
+Two network calls exist and both are triggered by you. These are every remote host the
+app can reach:
+
+| Host | When | Carries |
+|---|---|---|
+| `tile.openstreetmap.org` | you open the map | the tile coordinates you are looking at |
+| `overpass-api.de` | you run the camera-map import | a bounding box you chose |
+| `overpass.kumi.systems` | as above, if the first is down | as above |
+
+Cleartext is off for every one of them. It is permitted for `127.0.0.1` and `localhost`
+only, because the SDR bridge is a raw TCP socket on loopback that never leaves the phone
+— see [`network_security_config.xml`](app/src/main/res/xml/network_security_config.xml),
+which says so in its own comment.
+
+Cloud backup and device-to-device transfer are both excluded explicitly. Release builds
+also drop the `version-control-info` block Android normally embeds, so the shipped binary
+carries nothing about the machine that built it.
 
 ## Permissions, and why
+
+Every permission in the manifest, not a selection. Two of them look alarming for an app
+that claims never to transmit, so they are explained rather than buried.
 
 | Permission | Why |
 |---|---|
 | `ACCESS_FINE_LOCATION` | Android gates all Wi-Fi and Bluetooth scan results behind it, and the trail needs a position |
+| `ACCESS_COARSE_LOCATION` | paired with the above; the system requires both to be requested together |
 | `ACCESS_BACKGROUND_LOCATION` | scanning continues while the screen is off |
-| `BLUETOOTH_SCAN` / `NEARBY_WIFI_DEVICES` | passive discovery |
+| `ACCESS_WIFI_STATE` | read scan results |
+| **`CHANGE_WIFI_STATE`** | **`WifiManager.startScan()` requires it.** It is the permission that asks the radio to listen; nothing here turns Wi-Fi on or off, joins a network, or sends a frame |
+| `NEARBY_WIFI_DEVICES` | the Android 13+ replacement for using location as a Wi-Fi scanning gate |
+| `BLUETOOTH_SCAN` | passive BLE and classic discovery |
+| **`BLUETOOTH_CONNECT`** | **required to read a device *name*, nothing more.** Android 12 put `getName()` behind this permission. Wave never pairs, bonds or opens a connection |
+| `BLUETOOTH` / `BLUETOOTH_ADMIN` | the pre-Android-12 equivalents, capped at `maxSdkVersion="30"` so newer phones are not asked twice |
 | `READ_PHONE_STATE` | cell identity for the anomaly checks |
-| `FOREGROUND_SERVICE_LOCATION` | the scan runs as a visible foreground service |
-| `INTERNET` | the loopback `rtl_tcp` socket, OSM tiles, Overpass import |
+| `FOREGROUND_SERVICE` / `FOREGROUND_SERVICE_LOCATION` | the scan runs as a visible foreground service, not in secret |
+| `POST_NOTIFICATIONS` | the foreground-service notification, and alerts |
+| `INTERNET` | the loopback `rtl_tcp` socket, plus the three hosts listed above |
+
+`WAKE_LOCK` and `RECEIVE_BOOT_COMPLETED` were declared up to and including 1.0.2 and
+never used — no wake lock is acquired anywhere and there is no boot receiver. They have
+been removed from the source and will be absent from the next release. If you audit the
+1.0.2 APK you will still find them declared; that is the reason.
 
 ---
 
